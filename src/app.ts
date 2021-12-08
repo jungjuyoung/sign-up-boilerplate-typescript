@@ -7,7 +7,6 @@ const app = express();
 const port: number = 5000;
 
 const mongURI = config.get<string>('URI');
-console.log(`mongURI: ${mongURI}`);
 
 mongoose
   .connect(mongURI)
