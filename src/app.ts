@@ -1,12 +1,18 @@
 import express, { Request, Response, NextFunction } from 'express';
-import config from 'config';
-import connect from './utils/connect';
-import logger from './utils/logger';
 import routes from './routes';
+import mongoose from 'mongoose';
+import config from 'config';
 
 const app = express();
-const port = config.get<number>('port');
-const host = config.get<string>('host');
+const port: number = 5000;
+
+const mongURI = config.get<string>('URI');
+console.log(`mongURI: ${mongURI}`);
+
+mongoose
+  .connect(mongURI)
+  .then(() => console.log(`MongoDB Connected...`))
+  .catch((err) => console.log(err));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -17,7 +23,6 @@ app.get('/', (req: Request, res: Response, next: NextFunction) => {
 });
 
 app.listen(port, async () => {
-  logger.info(`Server http://${host}:${port}`);
-  await connect();
+  console.log(`Server http://localhost:${port}`);
   routes(app);
 });
