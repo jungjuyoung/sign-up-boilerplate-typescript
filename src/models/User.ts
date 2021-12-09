@@ -1,6 +1,18 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
 import config from 'config';
+import { NextFunction } from 'express';
+
+const saltRounds = 10;
+export interface IUser extends Document {
+  name: string;
+  email: string;
+  password: string;
+  lastname: string;
+  role: number;
+  token: string;
+  tokenExp: number;
+}
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -29,6 +41,23 @@ const userSchema = new mongoose.Schema({
   tokenExp: {
     type: Number,
   },
+});
+
+userSchema.pre('save', function (next) {
+  let user = this;
+  console.log('@@@', this);
+
+  if (user.isModified('password')) {
+    // 비밀번호를 암호화한다.
+    bcrypt.genSalt(saltRounds, (err: any, salt: string) => {
+      if (err) return next(err);
+      bcrypt.hash(user.password, salt, (err, hash: string) => {
+        if (err) return next(err);
+        user.password = hash;
+        next();
+      });
+    });
+  }
 });
 
 const UserModel = mongoose.model('User', userSchema);
