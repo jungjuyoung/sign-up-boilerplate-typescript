@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, model } from 'mongoose';
+import mongoose, { Schema, Document, Model } from 'mongoose';
 import bcrypt from 'bcrypt';
 import config from 'config';
 import jwt from 'jsonwebtoken';
@@ -9,11 +9,12 @@ export interface IUser {
   password: string;
   lastname: string;
   role: number;
+  image: string;
   token: string;
   tokenExp: number;
-  _id: string;
+  _id: jwt.JwtPayload | string;
 }
-export interface IUserCallback extends IUser {
+export interface IUserDocument extends Document {
   comparePassword: (
     plainPassword: string,
     cb: (err: Error | null, isMatch: boolean | null) => void,
@@ -21,16 +22,11 @@ export interface IUserCallback extends IUser {
   generateToken: (cd: (err: Error, user: IUser) => void) => void;
 }
 
-const userSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    maxlength: 50,
-  },
-  email: {
-    type: String,
-    trim: true,
-    unique: 1,
-  },
+export interface IUserModel extends Model<IUserDocument> {
+  findByToken: (token: string, cb: (err: Error, user: IUser) => void) => void;
+}
+
+const userSchema: Schema = new mongoose.Schema<IUser>({
   password: {
     type: String,
     minlength: 5,
@@ -50,8 +46,9 @@ const userSchema = new mongoose.Schema({
   },
 });
 
+// 회원가입 하기전에 전처리
 userSchema.pre('save', async function (next) {
-  // console.log('User모델 pre save');
+  console.log('User모델 pre save');
   const user = this;
 
   if (!user.isModified('password')) {
@@ -73,16 +70,13 @@ userSchema.pre('save', async function (next) {
 userSchema.methods.comparePassword = function (plainPassword, cb) {
   console.log(`Schema.methods.comparePassword`);
   // plainPassword: 1234567 vs 암호화된 비밀번호 비교
-  bcrypt.compare(
-    plainPassword,
-    this.password,
-    (err: any, isMatch: boolean | null) => {
-      if (err) return cb(err, null);
-      cb(null, isMatch);
-    },
-  );
+  bcrypt.compare(plainPassword, this.password, (err, isMatch) => {
+    if (err) return cb(err, null);
+    cb(null, isMatch);
+  });
 };
 
+// 토큰생성
 userSchema.methods.generateToken = function (cb) {
   console.log(`Schema.methods.generateTOke`);
   // jsonwebtoken을 이용해서 token 생성하기
@@ -99,5 +93,22 @@ userSchema.methods.generateToken = function (cb) {
   });
 };
 
-const UserModel = mongoose.model<IUserCallback>('User', userSchema);
+//
+userSchema.statics.findByToken = function (token: string, cb) {
+  let user = this;
+  // 토큰을 decoded한다.
+  jwt.verify(token, config.get<string>('sign'), (err, decoded) => {
+    // 유저 아이디를 이용해서 유저를 찾은 다음에,
+    // 클라이언트에서 가져온 token과 DB에 있는 토큰이 일치하는지 확인
+    user.findOne({ _id: decoded, token }, (err: Error, user: IUser) => {
+      if (err) return cb(err);
+      cb(null, user);
+    });
+  });
+};
+
+const UserModel = mongoose.model<IUserDocument, IUserModel, IUser>(
+  'User',
+  userSchema,
+);
 export default UserModel;
