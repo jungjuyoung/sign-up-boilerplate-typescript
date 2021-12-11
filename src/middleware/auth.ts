@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import UserModel, { IUser, IUserDocument, IUserModel } from '../models/User';
+import UserModel, { IUser } from '../models/User';
 
 let auth = (req: Request, res: Response, next: NextFunction) => {
   // 인증처리 하는곳

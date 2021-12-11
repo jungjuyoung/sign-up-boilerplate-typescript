@@ -93,7 +93,7 @@ userSchema.methods.generateToken = function (cb) {
   });
 };
 
-//
+// 토큰찾기
 userSchema.statics.findByToken = function (token: string, cb) {
   let user = this;
   // 토큰을 decoded한다.
