@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import UserModel, { IUser } from '../models/User';
+import UserModel, { UserDocument } from '../models/user.model';
 
 let auth = (req: Request, res: Response, next: NextFunction) => {
   // 인증처리 하는곳
@@ -8,7 +8,7 @@ let auth = (req: Request, res: Response, next: NextFunction) => {
   console.log(`auth token: ${token}`);
 
   // 2. 토큰을 복호화 한 후 유저를 찾는다.
-  UserModel.findByToken(token, (err: Error | null, user: IUser) => {
+  UserModel.findByToken(token, (err: Error | null, user: UserDocument) => {
     if (err) throw err;
     if (!user) return res.json({ isAuth: false, error: true });
 

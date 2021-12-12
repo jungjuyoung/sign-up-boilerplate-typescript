@@ -12,4 +12,5 @@ const connect = async () => {
     process.exit(1);
   }
 };
+
 export default connect;
